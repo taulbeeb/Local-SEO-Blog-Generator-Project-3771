@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
@@ -8,16 +8,22 @@ import * as FiIcons from 'react-icons/fi'
 const { FiMail, FiLock, FiEye, FiEyeOff, FiAlertCircle } = FiIcons
 
 const LoginForm = () => {
-  const { signIn, signUp, isConfigured } = useAuth()
+  const { signIn, signUp, isConfigured, authError } = useAuth()
   const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
 
+  useEffect(() => {
+    // Show toast for auth errors from context
+    if (authError) {
+      toast.error(`Authentication error: ${authError}`)
+    }
+  }, [authError])
+
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
     if (!isConfigured) {
       toast.error('Supabase is not configured. Please check your environment variables.')
       return
@@ -25,7 +31,7 @@ const LoginForm = () => {
 
     setLoading(true)
     try {
-      const { error } = isLogin 
+      const { error } = isLogin
         ? await signIn(email, password)
         : await signUp(email, password)
 
@@ -33,12 +39,13 @@ const LoginForm = () => {
         toast.error(error.message)
       } else {
         if (!isLogin) {
-          toast.success('Please check your email for verification link')
+          toast.success('Account created successfully!')
         } else {
           toast.success('Welcome back!')
         }
       }
     } catch (error) {
+      console.error('Authentication error:', error)
       toast.error('An unexpected error occurred')
     } finally {
       setLoading(false)
@@ -59,11 +66,11 @@ const LoginForm = () => {
               Configuration Required
             </h1>
             <p className="text-gray-600 mb-6">
-              Supabase environment variables are not configured. Please set up your .env file with:
+              Supabase environment variables are not configured correctly. Please check your deployment settings with:
             </p>
             <div className="bg-gray-100 rounded-lg p-4 text-left text-sm font-mono">
-              <div>VITE_SUPABASE_URL=your_supabase_url</div>
-              <div>VITE_SUPABASE_ANON_KEY=your_anon_key</div>
+              <div>VITE_SUPABASE_URL=https://cevkjhdqjyaicgfazzdr.supabase.co</div>
+              <div>VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNldmtqaGRxanlhaWNnZmF6emRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM3NjE5ODMsImV4cCI6MjA2OTMzNzk4M30.nK97lPYF-jKCFvO08L4WO6HNaobrmqMPRVBtRbA4glI</div>
             </div>
           </div>
         </motion.div>
@@ -93,7 +100,10 @@ const LoginForm = () => {
               Email Address
             </label>
             <div className="relative">
-              <SafeIcon icon={FiMail} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <SafeIcon
+                icon={FiMail}
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              />
               <input
                 type="email"
                 value={email}
@@ -110,7 +120,10 @@ const LoginForm = () => {
               Password
             </label>
             <div className="relative">
-              <SafeIcon icon={FiLock} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <SafeIcon
+                icon={FiLock}
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              />
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={password}

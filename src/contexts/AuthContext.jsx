@@ -1,14 +1,15 @@
-import React, {createContext, useContext, useState, useEffect} from 'react'
-import {supabase, isSupabaseConfigured} from '../lib/supabase'
+import React, { createContext, useContext, useState, useEffect } from 'react'
+import { supabase, isSupabaseConfigured } from '../lib/supabase'
 
 const AuthContext = createContext({})
 
 export const useAuth = () => useContext(AuthContext)
 
-export const AuthProvider = ({children}) => {
+export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [isConfigured, setIsConfigured] = useState(false)
+  const [authError, setAuthError] = useState(null)
 
   useEffect(() => {
     // Check if Supabase is properly configured
@@ -16,6 +17,7 @@ export const AuthProvider = ({children}) => {
     setIsConfigured(configured)
     
     if (!configured) {
+      console.error('Supabase not configured properly')
       setLoading(false)
       return
     }
@@ -23,22 +25,33 @@ export const AuthProvider = ({children}) => {
     // Get initial session
     const initSession = async () => {
       try {
-        const {data: {session}} = await supabase.auth.getSession()
-        setUser(session?.user ?? null)
+        console.log('Initializing auth session...')
+        const { data: { session }, error } = await supabase.auth.getSession()
+        
+        if (error) {
+          console.error('Session error:', error)
+          setAuthError(error.message)
+          setUser(null)
+        } else {
+          console.log('Session state:', session ? 'Active' : 'None')
+          setUser(session?.user ?? null)
+        }
       } catch (error) {
         console.error("Error getting session:", error)
+        setAuthError(error.message)
         setUser(null)
       } finally {
         setLoading(false)
       }
     }
-    
+
     initSession()
 
     // Listen for auth changes
     try {
-      const {data: {subscription}} = supabase.auth.onAuthStateChange(
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
         async (event, session) => {
+          console.log('Auth state change:', event)
           setUser(session?.user ?? null)
           setLoading(false)
         }
@@ -55,41 +68,57 @@ export const AuthProvider = ({children}) => {
       }
     } catch (error) {
       console.error("Error setting up auth state change listener:", error)
+      setAuthError(error.message)
       setLoading(false)
     }
   }, [])
 
   const signUp = async (email, password) => {
     if (!isConfigured) {
-      return {error: {message: 'Supabase not configured'}}
+      return { error: { message: 'Supabase not configured' } }
     }
     
-    const {data, error} = await supabase.auth.signUp({
-      email,
-      password,
-    })
-    return {data, error}
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      })
+      return { data, error }
+    } catch (error) {
+      console.error("Sign up error:", error)
+      return { error: { message: error.message } }
+    }
   }
 
   const signIn = async (email, password) => {
     if (!isConfigured) {
-      return {error: {message: 'Supabase not configured'}}
+      return { error: { message: 'Supabase not configured' } }
     }
     
-    const {data, error} = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-    return {data, error}
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+      return { data, error }
+    } catch (error) {
+      console.error("Sign in error:", error)
+      return { error: { message: error.message } }
+    }
   }
 
   const signOut = async () => {
     if (!isConfigured) {
-      return {error: {message: 'Supabase not configured'}}
+      return { error: { message: 'Supabase not configured' } }
     }
     
-    const {error} = await supabase.auth.signOut()
-    return {error}
+    try {
+      const { error } = await supabase.auth.signOut()
+      return { error }
+    } catch (error) {
+      console.error("Sign out error:", error)
+      return { error: { message: error.message } }
+    }
   }
 
   const value = {
@@ -98,7 +127,8 @@ export const AuthProvider = ({children}) => {
     signIn,
     signOut,
     loading,
-    isConfigured
+    isConfigured,
+    authError
   }
 
   return (
