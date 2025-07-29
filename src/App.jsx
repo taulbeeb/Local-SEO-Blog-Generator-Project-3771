@@ -1,14 +1,14 @@
 import React from 'react'
 import {HashRouter as Router} from 'react-router-dom'
 import {Toaster} from 'react-hot-toast'
-import {AuthProvider,useAuth} from './contexts/AuthContext'
+import {AuthProvider, useAuth} from './contexts/AuthContext'
 import LoginForm from './components/Auth/LoginForm'
 import Dashboard from './pages/Dashboard'
 import './index.css'
 
 function AppContent() {
-  const {user,loading} = useAuth()
-
+  const {user, loading} = useAuth()
+  
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -16,7 +16,7 @@ function AppContent() {
       </div>
     )
   }
-
+  
   return user ? <Dashboard /> : <LoginForm />
 }
 
