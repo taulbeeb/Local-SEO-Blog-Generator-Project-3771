@@ -1,13 +1,13 @@
 import React from 'react'
-import { BrowserRouter as Router } from 'react-router-dom'
-import { Toaster } from 'react-hot-toast'
-import { AuthProvider, useAuth } from './contexts/AuthContext'
+import {HashRouter as Router} from 'react-router-dom'
+import {Toaster} from 'react-hot-toast'
+import {AuthProvider,useAuth} from './contexts/AuthContext'
 import LoginForm from './components/Auth/LoginForm'
 import Dashboard from './pages/Dashboard'
 import './index.css'
 
 function AppContent() {
-  const { user, loading } = useAuth()
+  const {user,loading} = useAuth()
 
   if (loading) {
     return (
